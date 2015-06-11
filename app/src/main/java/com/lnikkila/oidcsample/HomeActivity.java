@@ -128,7 +128,7 @@ public class HomeActivity extends Activity {
             if (result == null) {
                 loginButton.setText("Couldn't get user info");
             } else {
-                loginButton.setText("Logged in as " + result.get("preferred_username"));
+                loginButton.setText("Logged in as " + result.get("given_name"));
             }
         }
 

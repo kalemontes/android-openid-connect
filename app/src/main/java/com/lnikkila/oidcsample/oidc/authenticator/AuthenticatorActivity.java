@@ -76,7 +76,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         WebView webView = (WebView) findViewById(R.id.WebView);
 
         // TODO: Enable this if your authorisation page requires JavaScript
-        // webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setJavaScriptEnabled(true);
 
         webView.loadUrl(authUrl);
 
@@ -188,7 +188,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         // save for the user ID (i.e. the ID Token subject) which is hardly human-readable. This
         // makes choosing between multiple accounts difficult.
         //
-        // We'll resort to naming each account `preferred_username (ID)`. This is a neat solution
+        // We'll resort to naming each account `given_name (ID)`. This is a neat solution
         // if the user ID is short enough.
         //
         // [1]: http://openid.net/specs/openid-connect-basic-1_0.html#ClaimStability
@@ -204,18 +204,19 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             e.printStackTrace();
         }
 
-        // Get the user information so we can grab the `preferred_username`
+        // Get the user information so we can grab the `given_name`
         Map userInfo = Collections.emptyMap();
 
         try {
-            userInfo = OIDCUtils.getUserInfo(Config.userInfoUrl, response.getIdToken());
+//            userInfo = OIDCUtils.getUserInfo(Config.userInfoUrl, response.getIdToken());
+            userInfo = OIDCUtils.getUserInfo(Config.userInfoUrl, response.getAccessToken());
         } catch (IOException e) {
             Log.e(TAG, "Could not get UserInfo.");
             e.printStackTrace();
         }
 
-        if (userInfo.containsKey("preferred_username")) {
-            accountName = (String) userInfo.get("preferred_username");
+        if (userInfo.containsKey("given_name")) {
+            accountName = (String) userInfo.get("given_name");
         }
 
         account = new Account(String.format("%s (%s)", accountName, accountId), accountType);

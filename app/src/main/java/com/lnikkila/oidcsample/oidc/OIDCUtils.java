@@ -149,7 +149,10 @@ public class OIDCUtils {
     public static boolean isValidIdToken(String clientId, String tokenString) throws IOException {
 
         List<String> audiences = Collections.singletonList(clientId);
-        IdTokenVerifier verifier = new IdTokenVerifier.Builder().setAudience(audiences).build();
+        IdTokenVerifier verifier = new IdTokenVerifier.Builder()
+                .setAudience(audiences)
+                .setAcceptableTimeSkewSeconds(1000)
+                .build();
 
         IdToken idToken = IdToken.parse(new GsonFactory(), tokenString);
 

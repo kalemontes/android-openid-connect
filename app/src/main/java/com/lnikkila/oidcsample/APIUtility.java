@@ -75,13 +75,11 @@ public class APIUtility {
         } else {
             int code = request.code();
 
-            if (doRetry && (code == HTTP_UNAUTHORIZED || code == HTTP_FORBIDDEN || code == HTTP_BAD_REQUEST)) {
+            if (doRetry && (code == HTTP_UNAUTHORIZED || code == HTTP_FORBIDDEN || (code == HTTP_BAD_REQUEST && request.body().contains("invalid_grant")))) {
                 // We're being denied access on the first try, let's renew the token and retry
                 String accountType = context.getString(R.string.ACCOUNT_TYPE);
 
                 accountManager.setAuthToken(account, Authenticator.TOKEN_TYPE_ID, null);
-                accountManager.setAuthToken(account, Authenticator.TOKEN_TYPE_REFRESH, null);
-
                 accountManager.invalidateAuthToken(accountType, accessToken);
 
                 return makeRequest(context, method, url, account, false);

@@ -17,6 +17,7 @@ import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -147,7 +148,7 @@ public class OIDCUtils {
      */
     public static boolean isValidIdToken(String clientId, String tokenString) throws IOException {
 
-        List<String> audiences = Arrays.asList(clientId);
+        List<String> audiences = Collections.singletonList(clientId);
         IdTokenVerifier verifier = new IdTokenVerifier.Builder().setAudience(audiences).build();
 
         IdToken idToken = IdToken.parse(new GsonFactory(), tokenString);

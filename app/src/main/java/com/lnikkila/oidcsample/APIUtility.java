@@ -82,7 +82,7 @@ public class APIUtility {
                 return makeRequest(context, method, url, account, false);
             } else {
                 // An unrecoverable error or the renewed token didn't work either
-                throw new IOException(request.code() + " " + request.message());
+                throw new IOException(request.code() + " " + request.message() + " " + request.body());
             }
         }
     }

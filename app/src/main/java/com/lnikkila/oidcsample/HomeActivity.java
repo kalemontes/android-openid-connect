@@ -27,6 +27,7 @@ import java.util.Map;
 public class HomeActivity extends Activity {
 
     private Button loginButton;
+    private Button requestButton;
     private ProgressBar progressBar;
 
     private AccountManager accountManager;
@@ -37,6 +38,7 @@ public class HomeActivity extends Activity {
         setContentView(R.layout.activity_home);
 
         loginButton = (Button) findViewById(R.id.loginButton);
+        requestButton = (Button) findViewById(R.id.requestButton);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         progressBar.setVisibility(View.INVISIBLE);
 
@@ -94,6 +96,14 @@ public class HomeActivity extends Activity {
         }
     }
 
+    public void doRequest(View view) {
+        // Grab all our accounts
+        String accountType = getString(R.string.ACCOUNT_TYPE);
+        final Account availableAccounts[] = accountManager.getAccountsByType(accountType);
+
+        new ProtectedResTask().execute(availableAccounts[0]);
+    }
+
     private class ApiTask extends AsyncTask<Account, Void, Map> {
 
         @Override
@@ -129,6 +139,46 @@ public class HomeActivity extends Activity {
                 loginButton.setText("Couldn't get user info");
             } else {
                 loginButton.setText("Logged in as " + result.get("given_name"));
+            }
+        }
+
+    }
+
+    private class ProtectedResTask extends AsyncTask<Account, Void, Map> {
+
+        @Override
+        protected void onPreExecute() {
+            requestButton.setText("");
+            progressBar.setVisibility(View.VISIBLE);
+        }
+
+        /**
+         * Makes the API request. We could use the OIDCUtils.getUserInfo() method, but we'll do it
+         * like this to illustrate making generic API requests after we've logged in.
+         */
+        @Override
+        protected Map doInBackground(Account... args) {
+            Account account = args[0];
+
+            try {
+                return APIUtility.getJson(HomeActivity.this, "http://openam.example.com:8080/rs/", account);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        /**
+         * Processes the API's response.
+         */
+        @Override
+        protected void onPostExecute(Map result) {
+            progressBar.setVisibility(View.INVISIBLE);
+
+            if (result == null) {
+                requestButton.setText("Couldn't get request result");
+            } else {
+                requestButton.setText(result.toString());
             }
         }
 

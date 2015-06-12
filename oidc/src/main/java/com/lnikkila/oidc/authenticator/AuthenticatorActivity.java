@@ -90,7 +90,14 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
                 super.onPageStarted(view, urlString, favicon);
 
                 Uri url = Uri.parse(urlString);
-                Set<String> parameterNames = url.getQueryParameterNames();
+
+                Set<String> parameterNames;
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
+                    parameterNames = CompatUri.getQueryParameterNames(url);
+                }
+                else {
+                    parameterNames = url.getQueryParameterNames();
+                }
 
                 // The URL will contain a `code` parameter when the user has been authenticated
                 if (parameterNames.contains("code")) {

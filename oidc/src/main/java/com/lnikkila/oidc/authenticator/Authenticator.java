@@ -1,4 +1,4 @@
-package com.lnikkila.oidcsample.oidc.authenticator;
+package com.lnikkila.oidc.authenticator;
 
 import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
@@ -13,8 +13,8 @@ import android.util.Log;
 
 import com.google.api.client.auth.oauth2.TokenResponseException;
 import com.google.api.client.auth.openidconnect.IdTokenResponse;
-import com.lnikkila.oidcsample.Config;
-import com.lnikkila.oidcsample.oidc.OIDCUtils;
+import com.lnikkila.oidc.Config;
+import com.lnikkila.oidc.OIDCUtils;
 
 import java.io.IOException;
 

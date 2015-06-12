@@ -1,4 +1,4 @@
-package com.lnikkila.oidcsample;
+package com.lnikkila.oidc;
 
 /**
  * Simple utility class for storing OpenID Connect configuration. This should not be used in
@@ -12,12 +12,14 @@ public final class Config {
 
     // TODO: Add the information you received from your OIDC provider below.
 
-    public static final String clientId = "OIDCAndroidSample";
-    public static final String clientSecret = "android";
-
     public static final String authorizationServerUrl = "http://openam.example.com:8080/openam/oauth2/authorize";
     public static final String tokenServerUrl = "http://openam.example.com:8080/openam/oauth2/access_token";
     public static final String userInfoUrl = "http://openam.example.com:8080/openam/oauth2/userinfo";
+
+    // TODO : This info is application dependant, it should be defined by it and maybe contained by the account object itself
+
+    public static final String clientId = "OIDCAndroidSample";
+    public static final String clientSecret = "android";
 
     // This URL doesn't really have a use with native apps and basically just signifies the end
     // of the authorisation process. It doesn't have to be a real URL, but it does have to be the

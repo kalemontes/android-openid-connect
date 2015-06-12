@@ -8,8 +8,8 @@ import android.os.Bundle;
 
 import com.github.kevinsawicki.http.HttpRequest;
 import com.google.gson.Gson;
-import com.lnikkila.oidcsample.oidc.OIDCUtils;
-import com.lnikkila.oidcsample.oidc.authenticator.Authenticator;
+import com.lnikkila.oidc.OIDCUtils;
+import com.lnikkila.oidc.authenticator.Authenticator;
 
 import java.io.IOException;
 import java.util.Map;

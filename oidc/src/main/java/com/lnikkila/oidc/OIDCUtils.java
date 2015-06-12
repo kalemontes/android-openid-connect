@@ -1,4 +1,4 @@
-package com.lnikkila.oidcsample.oidc;
+package com.lnikkila.oidc;
 
 import com.github.kevinsawicki.http.HttpRequest;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;

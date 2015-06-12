@@ -14,7 +14,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ProgressBar;
 
-import com.lnikkila.oidcsample.oidc.authenticator.Authenticator;
+import com.lnikkila.oidc.Config;
+import com.lnikkila.oidc.authenticator.Authenticator;
 
 import java.io.IOException;
 import java.util.Map;

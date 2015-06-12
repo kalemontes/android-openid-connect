@@ -1,4 +1,4 @@
-package com.lnikkila.oidcsample.oidc.authenticator;
+package com.lnikkila.oidc.authenticator;
 
 import android.app.Service;
 import android.content.Intent;

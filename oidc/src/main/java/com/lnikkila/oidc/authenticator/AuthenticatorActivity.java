@@ -1,23 +1,26 @@
-package com.lnikkila.oidcsample.oidc.authenticator;
+package com.lnikkila.oidc.authenticator;
 
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.google.api.client.auth.openidconnect.IdTokenResponse;
-import com.lnikkila.oidcsample.Config;
-import com.lnikkila.oidcsample.oidc.OIDCUtils;
-import com.lnikkila.oidcsample.R;
+import com.lnikkila.oidc.Config;
+import com.lnikkila.oidc.OIDCUtils;
+import com.lnikkila.oidc.R;
+import com.lnikkila.oidc.minsdkcompat.CompatUri;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -50,6 +53,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
     private Account account;
     private boolean isNewAccount;
 
+    @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -75,7 +75,15 @@ public class APIUtility {
         } else {
             int code = request.code();
 
-            if (doRetry && (code == HTTP_UNAUTHORIZED || code == HTTP_FORBIDDEN || (code == HTTP_BAD_REQUEST && request.body().contains("invalid_grant")))) {
+            String requestContent = "empty body";
+            try {
+                requestContent = request.body();
+            } catch (HttpRequest.HttpRequestException e) {
+                //Nothing to do, the response has no body or couldn't fetch it
+                e.printStackTrace();
+            }
+
+            if (doRetry && (code == HTTP_UNAUTHORIZED || code == HTTP_FORBIDDEN || (code == HTTP_BAD_REQUEST && requestContent.contains("invalid_grant")))) {
                 // We're being denied access on the first try, let's renew the token and retry
                 String accountType = context.getString(R.string.ACCOUNT_TYPE);
 
@@ -85,7 +93,7 @@ public class APIUtility {
                 return makeRequest(context, method, url, account, false);
             } else {
                 // An unrecoverable error or the renewed token didn't work either
-                throw new IOException(request.code() + " " + request.message() + " " + request.body());
+                throw new IOException(request.code() + " " + request.message() + " " + requestContent);
             }
         }
     }

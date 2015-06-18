@@ -22,6 +22,7 @@ import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
  * An incomplete class that illustrates how to make API requests with the Access Token.
  *
  * @author Leo Nikkilä
+ * @author Camilo Montes
  */
 public class APIUtility {
 
@@ -50,6 +51,12 @@ public class APIUtility {
     private static String makeRequest(Context context, String method, String url, Account account,
                                      boolean doRetry) throws IOException {
 
+        Bundle options =  new Bundle();
+        options.putString("clientId", Config.clientId);
+        options.putString("clientSecret", Config.clientSecret);
+        options.putString("redirectUrl", Config.redirectUrl);
+        options.putStringArray("scopes", Config.scopes);
+
         AccountManager accountManager = AccountManager.get(context);
 		String accessToken;
 
@@ -60,7 +67,7 @@ public class APIUtility {
         try {
 
             AccountManagerFuture<Bundle> futureManager = accountManager.getAuthToken(account,
-                    Authenticator.TOKEN_TYPE_ACCESS, null, true, null, null);
+                    Authenticator.TOKEN_TYPE_ACCESS, options, true, null, null);
             accessToken = futureManager.getResult().getString(AccountManager.KEY_AUTHTOKEN);
         } catch (Exception e) {
             throw new IOException("Could not get access token from account.", e);

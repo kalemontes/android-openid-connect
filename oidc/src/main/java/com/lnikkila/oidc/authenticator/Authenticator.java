@@ -31,6 +31,7 @@ import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
  * Refresh Token: TOKEN_TYPE_REFRESH
  *
  * @author Leo Nikkilä
+ * @author Camilo Montes
  */
 public class Authenticator extends AbstractAccountAuthenticator {
 
@@ -65,7 +66,7 @@ public class Authenticator extends AbstractAccountAuthenticator {
 
         Bundle result = new Bundle();
 
-        Intent intent = createIntentForAuthorization(response);
+        Intent intent = createIntentForAuthorization(response, options);
 
         // We're creating a new account, not just renewing our authorisation
         intent.putExtra(AuthenticatorActivity.KEY_IS_NEW_ACCOUNT, true);
@@ -102,7 +103,8 @@ public class Authenticator extends AbstractAccountAuthenticator {
                 Log.d(TAG, "Refresh token empty, launching intent for renewing authorisation.");
 
                 Bundle result = new Bundle();
-                Intent intent = createIntentForAuthorization(response);
+
+                Intent intent = createIntentForAuthorization(response, options);
 
                 // Provide the account that we need re-authorised
                 intent.putExtra(AuthenticatorActivity.KEY_ACCOUNT_OBJECT, account);
@@ -116,10 +118,15 @@ public class Authenticator extends AbstractAccountAuthenticator {
                 IdTokenResponse tokenResponse;
 
                 try {
+                    //FIXME: this may cause some problems when trying to refresh token, cross check it
+                    String clientId = options.getString("clientId");  //TODO: constant
+                    String clientSecret = options.getString("clientSecret");  //TODO: constant
+                    String[] scopes = options.getStringArray("scopes");  //TODO: constant
+
                     tokenResponse = OIDCUtils.refreshTokens(Config.tokenServerUrl,
-                                                            Config.clientId,
-                                                            Config.clientSecret,
-                                                            Config.scopes,
+                                                            clientId,
+                                                            clientSecret,
+                                                            scopes,
                                                             refreshToken);
 
                     Log.d(TAG, "Got new tokens.");
@@ -135,7 +142,8 @@ public class Authenticator extends AbstractAccountAuthenticator {
                         Log.d(TAG, "Refresh token expired, launching intent for renewing authorisation.");
 
                         Bundle result = new Bundle();
-                        Intent intent = createIntentForAuthorization(response);
+
+                        Intent intent = createIntentForAuthorization(response, options);
 
                         // Provide the account that we need re-authorised
                         intent.putExtra(AuthenticatorActivity.KEY_ACCOUNT_OBJECT, account);
@@ -171,23 +179,54 @@ public class Authenticator extends AbstractAccountAuthenticator {
 
     /**
      * Create an intent for showing the authorisation web page.
+     * @param response response to send the result back to the AccountManager, will never be null
+     * @param options contains the OIDC client options (clientId, clientSecret, redirectUrl, scopes)
+     * @return an intent to open AuthenticatorActivity with AuthenticatorActivity.KEY_PRESENT_OPTS_FORM extra
+     * set to false if OIDC client correctly options are set (true otherwise).
      */
-    private Intent createIntentForAuthorization(AccountAuthenticatorResponse response) {
+    private Intent createIntentForAuthorization(AccountAuthenticatorResponse response, Bundle options) {
         Intent intent = new Intent(context, AuthenticatorActivity.class);
 
-        // Generate a new authorisation URL
-        String authUrl = OIDCUtils.newAuthorizationUrl(Config.authorizationServerUrl,
-                                                       Config.tokenServerUrl,
-                                                       Config.redirectUrl,
-                                                       Config.clientId,
-                                                       Config.clientSecret,
-                                                       Config.scopes);
+        if (options != null) {
+            intent.putExtras(options);
 
-        Log.d(TAG, String.format("Created new intent with authorisation URL '%s'.", authUrl));
+            if (options.containsKey("clientId")) {
+                //TODO: remove commented lines when we know it works
+//                String clientId = options.getString("clientId");
+//                String clientSecret = options.getString("clientSecret");
+//                String redirectUrl = options.getString("redirectUrl");
+//                String[] scopes = options.getStringArray("scopes");
+//                intent.putExtra("clientId", clientId);
+//                intent.putExtra("clientSecret", clientSecret);
+//                intent.putExtra("redirectUrl", redirectUrl);
+//                intent.putExtra("scopes", scopes);
 
-        intent.putExtra(AuthenticatorActivity.KEY_AUTH_URL, authUrl);
+                //The OIDC client options are correctly set.
+                Log.d(TAG, "The OIDC client options are correctly set.");
+
+                //This means we will be able to created authorisation URL directly.
+                intent.putExtra(AuthenticatorActivity.KEY_PRESENT_OPTS_FORM, false);
+            }
+            else {
+                //The OIDC client options are not correctly set.
+                //This usually means that the app using the lib didn't set them as it should when making an explicit call to authenticator.
+                Log.w(TAG, "Some OIDC client options are missing. Using form intent option so user can set them.");
+
+                //The user will have to set them via the form that will be presented on the AuthenticatorActivity.
+                intent.putExtra(AuthenticatorActivity.KEY_PRESENT_OPTS_FORM, true);
+            }
+        }
+        else {
+            // The OIDC client options are NOT set.
+            // This case usually happends when the user adds a new account through Android's system settings.
+            Log.d(TAG, "The OIDC client options are not set. Using form intent option so user can set them.");
+
+            //The user will have to set them via the form that will be presented on the AuthenticatorActivity.
+            intent.putExtra(AuthenticatorActivity.KEY_PRESENT_OPTS_FORM, true);
+        }
 
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
+
         return intent;
     }
 

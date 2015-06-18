@@ -10,26 +10,21 @@ import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
-import android.webkit.CookieSyncManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ProgressBar;
 
 import com.github.kevinsawicki.http.HttpRequest;
-import com.lnikkila.oidc.Config;
 import com.lnikkila.oidc.authenticator.Authenticator;
 
 import java.io.IOException;
-import java.net.CookieHandler;
-import java.net.CookieManager;
-import java.net.HttpCookie;
-import java.util.List;
 import java.util.Map;
 
 /**
  * Initiates the login procedures and contains all UI stuff related to the main activity.
  *
  * @author Leo Nikkilä
+ * @author Camilo Montes
  */
 public class HomeActivity extends Activity {
 
@@ -40,6 +35,7 @@ public class HomeActivity extends Activity {
 
     private AccountManager accountManager;
     private Account availableAccounts[];
+    private int selectedAccountIndex;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,10 +85,16 @@ public class HomeActivity extends Activity {
     public void doLogin(final View view) {
         String accountType = getString(R.string.ACCOUNT_TYPE);
 
+        Bundle options =  new Bundle();
+        options.putString("clientId", Config.clientId);
+        options.putString("clientSecret", Config.clientSecret);
+        options.putString("redirectUrl", Config.redirectUrl);
+        options.putStringArray("scopes", Config.scopes);
+
         switch (availableAccounts.length) {
             // No account has been created, let's create one now
             case 0:
-                accountManager.addAccount(accountType, Authenticator.TOKEN_TYPE_ID, null, null,
+                accountManager.addAccount(accountType, Authenticator.TOKEN_TYPE_ID, null, options,
                         this, new AccountManagerCallback<Bundle>() {
                             @Override
                             public void run(AccountManagerFuture<Bundle> futureManager) {
@@ -124,7 +126,8 @@ public class HomeActivity extends Activity {
                                 new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int selectedAccount) {
-                                        new ApiTask().execute(availableAccounts[selectedAccount]);
+                                        selectedAccountIndex = selectedAccount;
+                                        new ApiTask().execute(availableAccounts[selectedAccountIndex]);
                                     }
                                 })
                         .create()
@@ -133,11 +136,11 @@ public class HomeActivity extends Activity {
     }
 
     public void doRequest(View view) {
-        new ProtectedResTask().execute(availableAccounts[0]);
+        new ProtectedResTask().execute(availableAccounts[selectedAccountIndex]);
     }
 
     public void doLogout(View view) {
-        new LogoutTask().execute(availableAccounts[0]);
+        new LogoutTask().execute(availableAccounts[selectedAccountIndex]);
     }
 
     private class ApiTask extends AsyncTask<Account, Void, Map> {
@@ -157,7 +160,7 @@ public class HomeActivity extends Activity {
             Account account = args[0];
 
             try {
-                return APIUtility.getJson(HomeActivity.this, Config.userInfoUrl, account);
+                return APIUtility.getJson(HomeActivity.this, com.lnikkila.oidc.Config.userInfoUrl, account);
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
@@ -188,8 +191,7 @@ public class HomeActivity extends Activity {
         }
 
         /**
-         * Makes the API request. We could use the OIDCUtils.getUserInfo() method, but we'll do it
-         * like this to illustrate making generic API requests after we've logged in.
+         * Makes the API request to an SP.
          */
         @Override
         protected Map doInBackground(Account... args) {
@@ -234,6 +236,12 @@ public class HomeActivity extends Activity {
         protected String doInBackground(Account... args) {
             Account account = args[0];
 
+            Bundle options =  new Bundle();
+            options.putString("clientId", Config.clientId);
+            options.putString("clientSecret", Config.clientSecret);
+            options.putString("redirectUrl", Config.redirectUrl);
+            options.putStringArray("scopes", Config.scopes);
+
             try {
                 String accessToken;
 
@@ -244,7 +252,7 @@ public class HomeActivity extends Activity {
                 try {
 
                     AccountManagerFuture<Bundle> futureManager = accountManager.getAuthToken(account,
-                            Authenticator.TOKEN_TYPE_ACCESS, null, true, null, null);
+                            Authenticator.TOKEN_TYPE_ACCESS, options, true, null, null);
                     accessToken = futureManager.getResult().getString(AccountManager.KEY_AUTHTOKEN);
                 } catch (Exception e) {
                     throw new IOException("Could not get access token from account.", e);

@@ -5,8 +5,52 @@
     tools:context="com.lnikkila.oidcsample.oidc.authenticator.AuthenticatorActivity">
 
     <WebView
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:id="@+id/WebView" />
+
+    <LinearLayout
+        android:id="@+id/clientFormLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="invisible"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/clientIdEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="client id"
+            android:inputType="textNoSuggestions" />
+
+        <EditText
+            android:id="@+id/clientSecretEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:hint="client password" />
+
+        <EditText
+            android:id="@+id/redirectUriEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textUri"
+            android:hint="redirect url" />
+
+        <EditText
+            android:id="@+id/scopesEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:hint="scopes (separed by space)" />
+
+        <Button
+            android:id="@+id/setOIDCClientButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Set OIDC client"
+            android:onClick="setOIDCClientInfo"/>
+
+    </LinearLayout>
 
 </RelativeLayout>

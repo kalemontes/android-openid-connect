@@ -13,9 +13,11 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.EditText;
 
 import com.google.api.client.auth.openidconnect.IdTokenResponse;
 import com.lnikkila.oidc.Config;
@@ -41,18 +43,28 @@ import java.util.Set;
  * tokens.
  *
  * @author Leo Nikkilä
+ * @author Camilo Montes
  */
 public class AuthenticatorActivity extends AccountAuthenticatorActivity {
 
     private final String TAG = getClass().getSimpleName();
 
-    public static final String KEY_AUTH_URL = "com.lnikkila.oidcsample.KEY_AUTH_URL";
+    public static final String KEY_PRESENT_OPTS_FORM = "com.lnikkila.oidcsample.KEY_PRESENT_OPTS_FORM";
+    //public static final String KEY_AUTH_URL = "com.lnikkila.oidcsample.KEY_AUTH_URL";
     public static final String KEY_IS_NEW_ACCOUNT = "com.lnikkila.oidcsample.KEY_IS_NEW_ACCOUNT";
     public static final String KEY_ACCOUNT_OBJECT = "com.lnikkila.oidcsample.KEY_ACCOUNT_OBJECT";
 
     private AccountManager accountManager;
     private Account account;
     private boolean isNewAccount;
+
+    private WebView webView;
+    private View clientFormLayout;
+
+    private String clientId;
+    private String clientSecret;
+    private String redirectUrl;
+    private String[] scopes;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -71,19 +83,14 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         // to work with.
         account = extras.getParcelable(KEY_ACCOUNT_OBJECT);
 
-        // Fetch the authentication URL that was given to us by the calling activity
-        String authUrl = extras.getString(KEY_AUTH_URL);
-
-        Log.d(TAG, String.format("Initiated activity for getting authorisation with URL '%s'.",
-                authUrl));
+        // In case that the needed OIDC options are not set, present form to set them in order to create the authentication URL
+        boolean needsOptionsForm = extras.getBoolean(KEY_PRESENT_OPTS_FORM, true);
 
         // Initialise the WebView
-        WebView webView = (WebView) findViewById(R.id.WebView);
+        webView = (WebView) findViewById(R.id.WebView);
 
         // TODO: Enable this if your authorisation page requires JavaScript
         webView.getSettings().setJavaScriptEnabled(true);
-
-        webView.loadUrl(authUrl);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -95,8 +102,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
                 Set<String> parameterNames;
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) {
                     parameterNames = CompatUri.getQueryParameterNames(url);
-                }
-                else {
+                } else {
                     parameterNames = url.getQueryParameterNames();
                 }
 
@@ -128,7 +134,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
 
                     // If the user declines to authorise the app, there's no need to show an error
                     // message.
-                    if ( ! error.equals("access_denied")) {
+                    if (!error.equals("access_denied")) {
                         showErrorDialog(String.format("Error code: %s\n\n%s", error,
                                 errorDescription));
                     }
@@ -136,11 +142,69 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             }
 
             @Override
-            public void onPageFinished(WebView view, String url){
+            public void onPageFinished(WebView view, String url) {
                 String cookies = CookieManager.getInstance().getCookie(url);
                 Log.d(TAG, "All the cookies in a string:" + cookies);
             }
         });
+
+        //OIDC options form container
+        clientFormLayout = findViewById(R.id.clientFormLayout);
+
+        if (needsOptionsForm) {
+            webView.setVisibility(View.INVISIBLE);
+            clientFormLayout.setVisibility(View.VISIBLE);
+
+            Log.d(TAG, "Initiated activity for completing OIDC client options.");
+        }
+        else {
+            // Fetch the OIDC client options from the bundle extras
+            clientId = extras.getString("clientId"); //TODO: constant
+            clientSecret = extras.getString("clientSecret");  //TODO: constant
+            redirectUrl = extras.getString("redirectUrl");  //TODO: constant
+            scopes = extras.getStringArray("scopes");  //TODO: constant
+
+            // Generate the authentication URL using the oidc options set on the bundle
+            String authUrl = OIDCUtils.newAuthorizationUrl(Config.authorizationServerUrl,
+                    Config.tokenServerUrl,
+                    redirectUrl,
+                    clientId,
+                    clientSecret,
+                    scopes);
+
+            Log.d(TAG, String.format("Initiated activity for getting authorisation with URL '%s'.",
+                    authUrl));
+
+            webView.loadUrl(authUrl);
+        }
+    }
+
+    public void setOIDCClientInfo(View view) {
+
+        // Fetch the OIDC client options from the form
+        EditText clientidEdit = (EditText) findViewById(R.id.clientIdEditText);
+        EditText clientSecretEdit = (EditText) findViewById(R.id.clientSecretEditText);
+        EditText redirectUriEdit = (EditText) findViewById(R.id.redirectUriEditText);
+        EditText scopesEdit = (EditText) findViewById(R.id.scopesEditText);
+
+        clientId = clientidEdit.getText().toString();
+        clientSecret = clientSecretEdit.getText().toString();
+        redirectUrl = redirectUriEdit.getText().toString();
+        scopes = scopesEdit.getText().toString().split(" ");
+
+        // Generate a new authorisation URL
+        String authUrl = OIDCUtils.newAuthorizationUrl(Config.authorizationServerUrl,
+                Config.tokenServerUrl,
+                redirectUrl,
+                clientId,
+                clientSecret,
+                scopes);
+
+        Log.d(TAG, String.format("Initiates WebView workflow with URL '%s'.", authUrl));
+
+        clientFormLayout.setVisibility(View.INVISIBLE);
+        webView.setVisibility(View.VISIBLE);
+        webView.loadUrl(authUrl);
     }
 
     /**
@@ -157,9 +221,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             try {
                 response = OIDCUtils.requestTokens(Config.authorizationServerUrl,
                                                    Config.tokenServerUrl,
-                                                   Config.redirectUrl,
-                                                   Config.clientId,
-                                                   Config.clientSecret,
+                                                   redirectUrl,
+                                                   clientId,
+                                                   clientSecret,
                                                    authToken);
             } catch (IOException e) {
                 Log.e(TAG, "Could not get response.");

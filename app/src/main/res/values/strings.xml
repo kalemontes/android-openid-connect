@@ -4,5 +4,6 @@
     <string name="app_name">OIDC Sample</string>
     <string name="loginButtonText">Log in with OpenID Connect</string>
     <string name="requestButton">Request protected Ressource</string>
+    <string name="logoutButton">Log out from OpenID Connect</string>
 
 </resources>

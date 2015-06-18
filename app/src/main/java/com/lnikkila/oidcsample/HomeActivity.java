@@ -10,14 +10,20 @@ import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
+import android.webkit.CookieSyncManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ProgressBar;
 
+import com.github.kevinsawicki.http.HttpRequest;
 import com.lnikkila.oidc.Config;
 import com.lnikkila.oidc.authenticator.Authenticator;
 
 import java.io.IOException;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.HttpCookie;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,9 +35,11 @@ public class HomeActivity extends Activity {
 
     private Button loginButton;
     private Button requestButton;
+    private Button logoutButton;
     private ProgressBar progressBar;
 
     private AccountManager accountManager;
+    private Account availableAccounts[];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,19 +48,46 @@ public class HomeActivity extends Activity {
 
         loginButton = (Button) findViewById(R.id.loginButton);
         requestButton = (Button) findViewById(R.id.requestButton);
+        logoutButton = (Button) findViewById(R.id.logoutButton);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         progressBar.setVisibility(View.INVISIBLE);
 
         accountManager = AccountManager.get(this);
+
+        //TODO: place this in the app start
+        android.webkit.CookieSyncManager.createInstance(this.getApplicationContext());
+        // unrelated, just make sure cookies are generally allowed
+        android.webkit.CookieManager.getInstance().setAcceptCookie(true);
+
+        // magic starts here
+        WebkitCookieManagerProxy coreCookieManager = new WebkitCookieManagerProxy(null, java.net.CookiePolicy.ACCEPT_ALL);
+        java.net.CookieHandler.setDefault(coreCookieManager);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Grab all our accounts
+        String accountType = getString(R.string.ACCOUNT_TYPE);
+        availableAccounts = accountManager.getAccountsByType(accountType);
+
+        if (availableAccounts.length > 0) {
+            requestButton.setVisibility(View.VISIBLE);
+            logoutButton.setVisibility(View.VISIBLE);
+        } else {
+            requestButton.setVisibility(View.INVISIBLE);
+            requestButton.setText(R.string.requestButton);
+            logoutButton.setVisibility(View.INVISIBLE);
+            logoutButton.setText(R.string.loginButtonText);
+        }
     }
 
     /**
      * Called when the user taps the big yellow button.
      */
     public void doLogin(final View view) {
-        // Grab all our accounts
         String accountType = getString(R.string.ACCOUNT_TYPE);
-        final Account availableAccounts[] = accountManager.getAccountsByType(accountType);
 
         switch (availableAccounts.length) {
             // No account has been created, let's create one now
@@ -98,11 +133,11 @@ public class HomeActivity extends Activity {
     }
 
     public void doRequest(View view) {
-        // Grab all our accounts
-        String accountType = getString(R.string.ACCOUNT_TYPE);
-        final Account availableAccounts[] = accountManager.getAccountsByType(accountType);
-
         new ProtectedResTask().execute(availableAccounts[0]);
+    }
+
+    public void doLogout(View view) {
+        new LogoutTask().execute(availableAccounts[0]);
     }
 
     private class ApiTask extends AsyncTask<Account, Void, Map> {
@@ -142,7 +177,6 @@ public class HomeActivity extends Activity {
                 loginButton.setText("Logged in as " + result.get("given_name"));
             }
         }
-
     }
 
     private class ProtectedResTask extends AsyncTask<Account, Void, Map> {
@@ -182,6 +216,73 @@ public class HomeActivity extends Activity {
                 requestButton.setText(result.toString());
             }
         }
+    }
 
+    private class LogoutTask extends AsyncTask<Account, Void, String> {
+
+        @Override
+        protected void onPreExecute() {
+            logoutButton.setText("");
+            progressBar.setVisibility(View.VISIBLE);
+        }
+
+        /**
+         * Makes the API request. We could use the OIDCUtils.getUserInfo() method, but we'll do it
+         * like this to illustrate making generic API requests after we've logged in.
+         */
+        @Override
+        protected String doInBackground(Account... args) {
+            Account account = args[0];
+
+            try {
+                String accessToken;
+
+                // Try retrieving an access token from the account manager. The boolean true in the invocation
+                // tells Android to show a notification if the token can't be retrieved. When the
+                // notification is selected, it will launch the intent for re-authorisation. You could
+                // launch it automatically here if you wanted to by grabbing the intent from the bundle.
+                try {
+
+                    AccountManagerFuture<Bundle> futureManager = accountManager.getAuthToken(account,
+                            Authenticator.TOKEN_TYPE_ACCESS, null, true, null, null);
+                    accessToken = futureManager.getResult().getString(AccountManager.KEY_AUTHTOKEN);
+                } catch (Exception e) {
+                    throw new IOException("Could not get access token from account.", e);
+                }
+
+                // Prepare an API request using the accessToken
+                HttpRequest request = new HttpRequest("http://openam.example.com:8080/openam/frrest/oauth2/token/"+accessToken, HttpRequest.METHOD_DELETE);
+                request.contentType(HttpRequest.CONTENT_TYPE_JSON);
+                if (request.ok()) {
+                    return request.body();
+                } else {
+                    String requestContent = "empty body";
+                    try {
+                        requestContent = request.body();
+                    } catch (HttpRequest.HttpRequestException e) {
+                        //Nothing to do, the response has no body or couldn't fetch it
+                        e.printStackTrace();
+                    }
+                    throw new IOException(request.code() + " " + request.message() + " " + requestContent);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        /**
+         * Processes the API's response.
+         */
+        @Override
+        protected void onPostExecute(String result) {
+            progressBar.setVisibility(View.INVISIBLE);
+
+            if (result == null) {
+                logoutButton.setText("Couldn't logout");
+            } else {
+                logoutButton.setText(result);
+            }
+        }
     }
 }

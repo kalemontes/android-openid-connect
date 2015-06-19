@@ -50,9 +50,13 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
     private final String TAG = getClass().getSimpleName();
 
     public static final String KEY_PRESENT_OPTS_FORM = "com.lnikkila.oidcsample.KEY_PRESENT_OPTS_FORM";
-    //public static final String KEY_AUTH_URL = "com.lnikkila.oidcsample.KEY_AUTH_URL";
     public static final String KEY_IS_NEW_ACCOUNT = "com.lnikkila.oidcsample.KEY_IS_NEW_ACCOUNT";
     public static final String KEY_ACCOUNT_OBJECT = "com.lnikkila.oidcsample.KEY_ACCOUNT_OBJECT";
+
+    public static final String KEY_OPT_OIDC_CLIENT_ID        = "clientId";
+    public static final String KEY_OPT_OIDC_CLIENT_SECRET    = "clientSecret";
+    public static final String KEY_OPT_OIDC_CLIENT_REURL     = "redirectUrl";
+    public static final String KEY_OPT_OIDC_CLIENT_SCOPES    = "scopes";
 
     private AccountManager accountManager;
     private Account account;
@@ -89,7 +93,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         // Initialise the WebView
         webView = (WebView) findViewById(R.id.WebView);
 
-        // TODO: Enable this if your authorisation page requires JavaScript
+        //NOTE: Enable this if your authorisation page requires JavaScript
         webView.getSettings().setJavaScriptEnabled(true);
 
         webView.setWebViewClient(new WebViewClient() {
@@ -159,10 +163,10 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         }
         else {
             // Fetch the OIDC client options from the bundle extras
-            clientId = extras.getString("clientId"); //TODO: constant
-            clientSecret = extras.getString("clientSecret");  //TODO: constant
-            redirectUrl = extras.getString("redirectUrl");  //TODO: constant
-            scopes = extras.getStringArray("scopes");  //TODO: constant
+            clientId = extras.getString(KEY_OPT_OIDC_CLIENT_ID);
+            clientSecret = extras.getString(KEY_OPT_OIDC_CLIENT_SECRET);
+            redirectUrl = extras.getString(KEY_OPT_OIDC_CLIENT_REURL);
+            scopes = extras.getStringArray(KEY_OPT_OIDC_CLIENT_SCOPES);
 
             // Generate the authentication URL using the oidc options set on the bundle
             String authUrl = OIDCUtils.newAuthorizationUrl(Config.authorizationServerUrl,

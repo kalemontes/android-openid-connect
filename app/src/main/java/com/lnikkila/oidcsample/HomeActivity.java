@@ -76,7 +76,7 @@ public class HomeActivity extends Activity {
             requestButton.setVisibility(View.INVISIBLE);
             requestButton.setText(R.string.requestButton);
             logoutButton.setVisibility(View.INVISIBLE);
-            logoutButton.setText(R.string.loginButtonText);
+            logoutButton.setText(R.string.logoutButton);
         }
     }
 
@@ -84,6 +84,8 @@ public class HomeActivity extends Activity {
      * Called when the user taps the big yellow button.
      */
     public void doLogin(final View view) {
+
+        requestButton.setText(R.string.requestButton);
 
         String accountType = getString(R.string.ACCOUNT_TYPE);
         Bundle options = Config.getOIDCClientOptions();
@@ -174,8 +176,10 @@ public class HomeActivity extends Activity {
 
             if (result == null) {
                 loginButton.setText("Couldn't get user info");
+                logoutButton.setText("Can't logout unknown user");
             } else {
                 loginButton.setText("Logged in as " + result.get("given_name"));
+                logoutButton.setText("Logout from " + result.get("given_name") + " account");
             }
         }
     }
@@ -288,7 +292,8 @@ public class HomeActivity extends Activity {
             if (result == null) {
                 logoutButton.setText("Couldn't logout");
             } else {
-                logoutButton.setText(result);
+                loginButton.setText(R.string.loginButtonText);
+                logoutButton.setText("Logged out : " + result);
             }
         }
     }

@@ -115,50 +115,24 @@ public class Authenticator extends AbstractAccountAuthenticator {
                 // Got a refresh token, let's use it to get a fresh set of tokens
                 Log.d(TAG, "Got refresh token, getting new tokens.");
 
-                IdTokenResponse tokenResponse;
-
                 try {
-                    //FIXME: this may cause some problems when trying to refresh token, cross check it
-                    String clientId = options.getString("clientId");  //TODO: constant
-                    String clientSecret = options.getString("clientSecret");  //TODO: constant
-                    String[] scopes = options.getStringArray("scopes");  //TODO: constant
-
-                    tokenResponse = OIDCUtils.refreshTokens(Config.tokenServerUrl,
-                                                            clientId,
-                                                            clientSecret,
-                                                            scopes,
-                                                            refreshToken);
-
-                    Log.d(TAG, "Got new tokens.");
-
-                    accountManager.setAuthToken(account, TOKEN_TYPE_ID, tokenResponse.getIdToken());
-                    accountManager.setAuthToken(account, TOKEN_TYPE_ACCESS, tokenResponse.getAccessToken());
-                    accountManager.setAuthToken(account, TOKEN_TYPE_REFRESH, tokenResponse.getRefreshToken());
-                }catch (TokenResponseException e) {
-                    if(e.getStatusCode() == HTTP_BAD_REQUEST && e.getContent().contains("invalid_grant")) {
-                        // If the refresh token has expired, we need to launch an intent for the user
-                        // to get us a new set of tokens by authorising us again.
-
-                        Log.d(TAG, "Refresh token expired, launching intent for renewing authorisation.");
-
-                        Bundle result = new Bundle();
-
-                        Intent intent = createIntentForAuthorization(response, options);
-
-                        // Provide the account that we need re-authorised
-                        intent.putExtra(AuthenticatorActivity.KEY_ACCOUNT_OBJECT, account);
-
-                        result.putParcelable(AccountManager.KEY_INTENT, intent);
-                        return result;
-                    }
-                    else {
-                        // There's not much we can do if we get here
-                        Log.e(TAG, "Couldn't get new tokens.", e);
-                    }
+                    refreshTokens(account, refreshToken, options);
                 }
-                catch (IOException e) {
-                    // There's not much we can do if we get here
-                    Log.e(TAG, "Couldn't get new tokens.", e);
+                catch (TokenResponseException e) {
+                    // If the refresh token has expired, we need to launch an intent for the user
+                    // to get us a new set of tokens by authorising us again.
+
+                    Log.d(TAG, "Refresh token expired, launching intent for renewing authorisation.");
+
+                    Bundle result = new Bundle();
+
+                    Intent intent = createIntentForAuthorization(response, options);
+
+                    // Provide the account that we need re-authorised
+                    intent.putExtra(AuthenticatorActivity.KEY_ACCOUNT_OBJECT, account);
+
+                    result.putParcelable(AccountManager.KEY_INTENT, intent);
+                    return result;
                 }
 
                 // Now, let's return the token that was requested
@@ -178,6 +152,68 @@ public class Authenticator extends AbstractAccountAuthenticator {
     }
 
     /**
+     * Refreshes all account tokens by requesting new tokens to the access_token endpoint using the given refreshToken.
+     * @param account the account whose token should be refreshed, will never be null
+     * @param refreshToken the refresh token to be use
+     * @param options contains the OIDC client options (clientId, clientSecret, redirectUrl, scopes)
+     * @throws TokenResponseException when refreshToken is invalid or expired
+     */
+    private void refreshTokens(Account account, String refreshToken, Bundle options) throws TokenResponseException {
+        try {
+            if (options != null) {
+                if (options.containsKey(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_ID) &&
+                        options.containsKey(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_SECRET) &&
+                        options.containsKey(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_SCOPES)) {
+                    //The OIDC client options are correctly set.
+                    Log.d(TAG, "The OIDC client options are correctly set.");
+
+                    String clientId = options.getString(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_ID);
+                    String clientSecret = options.getString(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_SECRET);
+                    String[] scopes = options.getStringArray(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_SCOPES);
+
+                    IdTokenResponse tokenResponse = OIDCUtils.refreshTokens(Config.tokenServerUrl,
+                            clientId,
+                            clientSecret,
+                            scopes,
+                            refreshToken);
+
+                    Log.d(TAG, "Got new tokens.");
+
+                    accountManager.setAuthToken(account, TOKEN_TYPE_ID, tokenResponse.getIdToken());
+                    accountManager.setAuthToken(account, TOKEN_TYPE_ACCESS, tokenResponse.getAccessToken());
+                    accountManager.setAuthToken(account, TOKEN_TYPE_REFRESH, tokenResponse.getRefreshToken());
+                }
+                else {
+                    //The OIDC client options are not correctly set.
+                    //This usually means that the app using the lib didn't set them as it should when making an explicit call to authenticator.
+                    throw new IOException("Missing OIDC client configuration");
+                }
+            }
+            else {
+                // The OIDC client options are NOT set.
+                // This case usually happends when trying to renew token via Android's system settings (Sync).
+                //TODO: see what we can do here
+                throw new IOException("OIDC client configuration is not set");
+            }
+        }
+        catch (TokenResponseException e) {
+            //If token has expired propagate the exception, else just treat it like an IOException
+            if(e.getStatusCode() == HTTP_BAD_REQUEST && e.getContent().contains("invalid_grant")) {
+                Log.d(TAG, "Refresh token expired response detected");
+                throw e; //TODO: maybe we should make a custom exception class to handle this?
+            }
+            else {
+                // There's not much we can do if we get here
+                Log.e(TAG, "Couldn't get new tokens.", e);
+            }
+        }
+        catch (IOException e) {
+            // There's not much we can do if we get here
+            Log.e(TAG, "Couldn't get new tokens.", e);
+        }
+    }
+
+    /**
      * Create an intent for showing the authorisation web page.
      * @param response response to send the result back to the AccountManager, will never be null
      * @param options contains the OIDC client options (clientId, clientSecret, redirectUrl, scopes)
@@ -190,17 +226,10 @@ public class Authenticator extends AbstractAccountAuthenticator {
         if (options != null) {
             intent.putExtras(options);
 
-            if (options.containsKey("clientId")) {
-                //TODO: remove commented lines when we know it works
-//                String clientId = options.getString("clientId");
-//                String clientSecret = options.getString("clientSecret");
-//                String redirectUrl = options.getString("redirectUrl");
-//                String[] scopes = options.getStringArray("scopes");
-//                intent.putExtra("clientId", clientId);
-//                intent.putExtra("clientSecret", clientSecret);
-//                intent.putExtra("redirectUrl", redirectUrl);
-//                intent.putExtra("scopes", scopes);
-
+            if (options.containsKey(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_ID) &&
+                    options.containsKey(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_SECRET) &&
+                    options.containsKey(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_REURL) &&
+                    options.containsKey(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_SCOPES)) {
                 //The OIDC client options are correctly set.
                 Log.d(TAG, "The OIDC client options are correctly set.");
 

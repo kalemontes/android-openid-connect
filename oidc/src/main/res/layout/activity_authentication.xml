@@ -2,54 +2,63 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    tools:context="com.lnikkila.oidcsample.oidc.authenticator.AuthenticatorActivity">
+    tools:context="com.lnikkila.oidcsample.oidc.authenticator.AuthenticatorActivity"
+    android:background="@android:color/white">
 
     <WebView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:visibility="visible"
         android:id="@+id/WebView" />
 
     <LinearLayout
         android:id="@+id/clientFormLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
         android:visibility="invisible"
         android:orientation="vertical">
 
-        <EditText
+        <com.lnikkila.oidc.minsdkcompat.CompatEditText
+            style="@style/AuthEditText"
             android:id="@+id/clientIdEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="client id"
+            android:hint="CLIENT ID"
             android:inputType="textNoSuggestions" />
 
-        <EditText
+        <com.lnikkila.oidc.minsdkcompat.CompatEditText
+            style="@style/AuthEditText"
             android:id="@+id/clientSecretEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textPassword"
-            android:hint="client password" />
+            android:hint="CLIENT PASSWORD" />
 
-        <EditText
+        <com.lnikkila.oidc.minsdkcompat.CompatEditText
+            style="@style/AuthEditText"
             android:id="@+id/redirectUriEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textUri"
-            android:hint="redirect url" />
+            android:hint="REDIRECT URL" />
 
-        <EditText
+        <com.lnikkila.oidc.minsdkcompat.CompatEditText
+            style="@style/AuthEditText"
             android:id="@+id/scopesEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text"
-            android:hint="scopes (separed by space)" />
+            android:hint="SCOPES (separed by space)" />
 
-        <Button
+        <com.lnikkila.oidc.minsdkcompat.CompatEditText
+            style="@style/AuthButton"
             android:id="@+id/setOIDCClientButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Set OIDC client"
-            android:onClick="setOIDCClientInfo"/>
+            android:onClick="setOIDCClientInfo"
+            android:layout_gravity="center_horizontal" />
 
     </LinearLayout>
 

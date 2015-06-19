@@ -1,0 +1,27 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Base.Theme.AppCompat.Light">
+        <!-- Customize your theme here. -->
+    </style>
+
+    <style name="AuthEditText" parent="Base.V7.Widget.AppCompat.EditText">
+        <item name="android:background">#ffffbb33</item>
+        <item name="android:textColor">#ffffffff</item>
+        <item name="android:textColorHint">#ffffffff</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">20dp</item>
+        <item name="android:layout_marginTop">15dp</item>
+        <item name="android:layout_marginLeft">10dp</item>
+        <item name="android:layout_marginRight">10dp</item>
+    </style>
+
+    <style name="AuthButton" parent="Base.Widget.AppCompat.Button">
+        <item name="android:background">@android:color/darker_gray</item>
+        <item name="android:textColor">#ffffffff</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">20dp</item>
+        <item name="android:layout_marginTop">20dp</item>
+    </style>
+
+</resources>

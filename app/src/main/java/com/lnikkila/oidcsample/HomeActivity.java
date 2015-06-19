@@ -16,6 +16,7 @@ import android.widget.ProgressBar;
 
 import com.github.kevinsawicki.http.HttpRequest;
 import com.lnikkila.oidc.authenticator.Authenticator;
+import com.lnikkila.oidc.authenticator.AuthenticatorActivity;
 
 import java.io.IOException;
 import java.util.Map;
@@ -83,13 +84,9 @@ public class HomeActivity extends Activity {
      * Called when the user taps the big yellow button.
      */
     public void doLogin(final View view) {
-        String accountType = getString(R.string.ACCOUNT_TYPE);
 
-        Bundle options =  new Bundle();
-        options.putString("clientId", Config.clientId);
-        options.putString("clientSecret", Config.clientSecret);
-        options.putString("redirectUrl", Config.redirectUrl);
-        options.putStringArray("scopes", Config.scopes);
+        String accountType = getString(R.string.ACCOUNT_TYPE);
+        Bundle options = Config.getOIDCClientOptions();
 
         switch (availableAccounts.length) {
             // No account has been created, let's create one now
@@ -158,9 +155,10 @@ public class HomeActivity extends Activity {
         @Override
         protected Map doInBackground(Account... args) {
             Account account = args[0];
+            Bundle options = Config.getOIDCClientOptions();
 
             try {
-                return APIUtility.getJson(HomeActivity.this, com.lnikkila.oidc.Config.userInfoUrl, account);
+                return APIUtility.getJson(HomeActivity.this, com.lnikkila.oidc.Config.userInfoUrl, account, options);
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
@@ -196,9 +194,10 @@ public class HomeActivity extends Activity {
         @Override
         protected Map doInBackground(Account... args) {
             Account account = args[0];
+            Bundle options = Config.getOIDCClientOptions();
 
             try {
-                return APIUtility.getJson(HomeActivity.this, "http://openam.example.com:8080/rs/", account);
+                return APIUtility.getJson(HomeActivity.this, "http://openam.example.com:8080/rs/", account, options);
             } catch (IOException e) {
                 e.printStackTrace();
                 return null;
@@ -237,10 +236,10 @@ public class HomeActivity extends Activity {
             Account account = args[0];
 
             Bundle options =  new Bundle();
-            options.putString("clientId", Config.clientId);
-            options.putString("clientSecret", Config.clientSecret);
-            options.putString("redirectUrl", Config.redirectUrl);
-            options.putStringArray("scopes", Config.scopes);
+            options.putString(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_ID, Config.clientId);
+            options.putString(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_SECRET, Config.clientSecret);
+            options.putString(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_REURL, Config.redirectUrl);
+            options.putStringArray(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_SCOPES, Config.scopes);
 
             try {
                 String accessToken;

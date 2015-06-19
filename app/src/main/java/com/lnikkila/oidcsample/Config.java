@@ -1,5 +1,9 @@
 package com.lnikkila.oidcsample;
 
+import android.os.Bundle;
+
+import com.lnikkila.oidc.authenticator.AuthenticatorActivity;
+
 /**
  * Simple utility class for storing OpenID Connect configuration. This should not be used in
  * production. If you want to hide your keys, you should obfuscate them using ProGuard (with added
@@ -24,4 +28,13 @@ public final class Config {
     // `offline` scope instead. If you get an `invalid_scope` error when trying to authorise the
     // app, try changing it to `offline`.
     public static final String[] scopes = {"openid", "profile", "offline_access"};
+
+    public static Bundle getOIDCClientOptions(){
+        Bundle options =  new Bundle();
+        options.putString(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_ID, clientId);
+        options.putString(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_SECRET, clientSecret);
+        options.putString(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_REURL, redirectUrl);
+        options.putStringArray(AuthenticatorActivity.KEY_OPT_OIDC_CLIENT_SCOPES, scopes);
+        return options;
+    }
 }

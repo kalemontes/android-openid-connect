@@ -29,10 +29,10 @@ public class APIUtility {
     /**
      * Makes a GET request and parses the received JSON string as a Map.
      */
-    public static Map getJson(Context context, String url, Account account)
+    public static Map getJson(Context context, String url, Account account, Bundle options)
             throws IOException {
 
-        String jsonString = makeRequest(context, HttpRequest.METHOD_GET, url, account);
+        String jsonString = makeRequest(context, HttpRequest.METHOD_GET, url, account, options);
         return new Gson().fromJson(jsonString, Map.class);
     }
 
@@ -42,20 +42,14 @@ public class APIUtility {
      * If the request doesn't execute successfully on the first try, the tokens will be refreshed
      * and the request will be retried. If the second try fails, an exception will be raised.
      */
-    public static String makeRequest(Context context, String method, String url, Account account)
+    public static String makeRequest(Context context, String method, String url, Account account, Bundle options)
             throws IOException {
 
-        return makeRequest(context, method, url, account, true);
+        return makeRequest(context, method, url, account, true, options);
     }
 
     private static String makeRequest(Context context, String method, String url, Account account,
-                                     boolean doRetry) throws IOException {
-
-        Bundle options =  new Bundle();
-        options.putString("clientId", Config.clientId);
-        options.putString("clientSecret", Config.clientSecret);
-        options.putString("redirectUrl", Config.redirectUrl);
-        options.putStringArray("scopes", Config.scopes);
+                                     boolean doRetry, Bundle options) throws IOException {
 
         AccountManager accountManager = AccountManager.get(context);
 		String accessToken;
@@ -98,7 +92,7 @@ public class APIUtility {
                 accountManager.setAuthToken(account, Authenticator.TOKEN_TYPE_ID, null);
                 accountManager.invalidateAuthToken(accountType, accessToken);
 
-                return makeRequest(context, method, url, account, false);
+                return makeRequest(context, method, url, account, false, options);
             } else {
                 // An unrecoverable error or the renewed token didn't work either
                 throw new IOException(request.code() + " " + request.message() + " " + requestContent);
